@@ -1,0 +1,24 @@
+#!/usr/bin/make -f
+
+include /usr/share/dpkg/buildflags.mk
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+export CK_TIMEOUT_MULTIPLIER=100
+
+%:
+	dh $@ --buildsystem=meson
+
+override_dh_auto_configure:
+	dh_auto_configure -- -Dtests=true
+
+# deal with #842246
+override_dh_autoreconf:
+
+
+override_dh_auto_test:
+ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
+ifeq (riscv64,$(DEB_HOST_ARCH))
+	-LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=softpipe VRENDTEST_USE_EGL_SURFACELESS=1 meson test -C obj-*  -t 100
+else
+	LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=softpipe VRENDTEST_USE_EGL_SURFACELESS=1 meson test -C obj-*  -t 100
+endif
+endif
